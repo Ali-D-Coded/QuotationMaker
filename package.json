@@ -1,0 +1,27 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --host",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "html2pdf.js": "^0.9.0",
+    "nuxt": "^3.11.2",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^22.7.1",
+    "vue": "^3.4.21",
+    "vue-html2pdf": "^1.8.0",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@sidebase/nuxt-pdf": "^1.0.0-alpha.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
+  }
+}
