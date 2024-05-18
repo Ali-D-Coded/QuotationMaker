@@ -12,6 +12,27 @@ export function generatePseudoUUID() {
 	});
 }
 
+export function generateCustomerID() {
+	const timestamp = Date.now().toString(36).toUpperCase(); // Convert timestamp to a base-36 string
+	const randomNum = Math.random().toString(36).substring(2, 10).toUpperCase(); // Generate a random base-36 string
+	return `CUST-${timestamp}-${randomNum}`;
+}
+
+export type DataArray = (string | number)[][];
+type DataObject = Record<string, string | number>;
+
+export function convertToObjects(array: DataArray): DataObject[] {
+	const headers = array[0]; // Extract headers from the first row
+	const result = array.slice(1).map(row => {
+		const obj: DataObject = { id: generatePseudoUUID() };
+		headers.forEach((header, index) => {
+			obj[header] = row[index];
+		});
+		return obj;
+	});
+	return result;
+}
+
 type TableRow = [string, string, string, string];
 
 export interface PricingPDFParams {
@@ -77,9 +98,25 @@ export async function createPricingPDF({
 		color: darkBlue,
 	});
 
+	page.drawText('ID :', {
+		x: width - 240,
+		y: height - 71,
+		size: 11,
+		font: telegrafRegFont,
+		color: darkBlue,
+	});
+
+	page.drawText(customerId, {
+		x: width - 215,
+		y: height - 71,
+		size: 11,
+		font: nexaBoldFont,
+		color: darkBlue,
+	});
+
 
 	page.drawText('DATE :', {
-		x: 430,
+		x: 420,
 		y: height - 120,
 		size: 11,
 		font: telegrafRegFont,
@@ -87,40 +124,24 @@ export async function createPricingPDF({
 	});
 
 	page.drawText(date, {
-		x: 475,
+		x: 473,
 		y: height - 120,
 		size: 11,
 		font: nexaBoldFont,
 		color: darkBlue,
 	});
 
-	page.drawText('CUSTOMERID :', {
-		x: 388,
-		y: height - 140,
-		size: 11,
-		font: telegrafRegFont,
-		color: darkBlue,
-	});
-
-	page.drawText(customerId, {
-		x: 475,
-		y: height - 140,
-		size: 11,
-		font: nexaBoldFont,
-		color: darkBlue,
-	});
-
 	page.drawText('VALID TILL :', {
-		x: 402,
-		y: height - 160,
+		x: 390,
+		y: height - 140,
 		size: 11,
 		font: telegrafRegFont,
 		color: darkBlue,
 	});
 
 	page.drawText(validTill, {
-		x: 475,
-		y: height - 160,
+		x: 473,
+		y: height - 140,
 		size: 11,
 		font: nexaBoldFont,
 		color: darkBlue,

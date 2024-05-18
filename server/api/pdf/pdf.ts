@@ -1,7 +1,8 @@
 import fs from 'node:fs'
 import { PDFDocument, PageSizes, StandardFonts, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit'
-import { createPricingPDF } from '~/utils/fun';
+import { DataArray, convertToObjects, createPricingPDF } from '~/utils/fun';
+import { google } from 'googleapis';
 
 
 
@@ -18,31 +19,60 @@ export default defineEventHandler(async (event) => {
 
 	// firstPage.
 	const svd = await pdfDoc.save()
-	setResponseHeaders(event, {
-		'Content-Disposition': `attachment; filename="quotation.pdf"`,
-		'Content-Type': 'application/pdf' // S
-	})
+	// setResponseHeaders(event, {
+	// 	'Content-Disposition': `attachment; filename="quotation.pdf"`,
+	// 	'Content-Type': 'application/pdf' // S
+	// })
 
 
-	const ppdf = await createPricingPDF({
-		customer: 'Ali',
-		projectDescription: 'Digital Marketing',
-		tableData: [
-			['Full Audit (SEO/ads/etc)', '1', '2,000', '2,000'],
-			['SEO & Optimisation', '1', '10,000', '10,000'],
-			['Content Marketing Strategy', '1', '5,000', '5,000'],
-			['Ads Strategy', '3', '2,000', '6,000'],
-			// ['Poster', '12', '450', '5,400'],
-			// ['Reel', '2', '1,000', '2,000'],
-			['LinkedIn Campaign for followers & Lead Generation', '1', '7,000', '7,000'],
-			// ['Page SET UP & Management', '', '5,000', '5,000'],
-		],
-		subtotal: 42400,
-		total: '42,400',
+	// const ppdf = await createPricingPDF({
+	// 	date: "12/12/24",
+	// 	customerId: "CUST-LWBP8X86-TSSKVTK9",
+	// 	validTill: "12/12/24",
+	// 	customer: 'Ali',
+	// 	projectDescription: 'Digital Marketing',
+	// 	tableData: [
+	// 		['Full Audit (SEO/ads/etc)', '1', '2,000', '2,000'],
+	// 		['SEO & Optimisation', '1', '10,000', '10,000'],
+	// 		['Content Marketing Strategy', '1', '5,000', '5,000'],
+	// 		['Ads Strategy', '3', '2,000', '6,000'],
+	// 		// ['Poster', '12', '450', '5,400'],
+	// 		// ['Reel', '2', '1,000', '2,000'],
+	// 		['LinkedIn Campaign for followers & Lead Generation', '1', '7,000', '7,000'],
+	// 		// ['Page SET UP & Management', '', '5,000', '5,000'],
+	// 	],
+	// 	subtotal: 42400,
+	// 	gst: 56555,
+	// 	total: '42,400',
+	// });
+
+	console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+	const auth = new google.auth.GoogleAuth({
+		keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+		scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
 	});
 
+	const sheets = google.sheets({
+		version: "v4",
+		auth: auth
+	});
 
-	return send(event, ppdf)
+	const sheetId = process.env.SHEET_ID; // Replace with your actual sheet ID
+	const range = 'Sheet1!A1:B5';
+	const res = await sheets.spreadsheets.values.get({
+		spreadsheetId: sheetId,
+		range
+	})
+	const dt = convertToObjects(res.data.values as DataArray)
+
+
+
+
+	return {
+		dt
+	}
+	// return send(event, ppdf)
 })
 
 

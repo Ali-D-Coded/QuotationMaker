@@ -1,14 +1,9 @@
 // file: ~/server/api/pdf/my-pdf.vue
-import { createPDF, streamReturnPDF } from '#pdf'
-import fs from 'node:fs'
-import puppeteer from 'puppeteer';
+import fs from 'node:fs';
 
-import path from 'path'
 import { PDFDocument } from 'pdf-lib';
-import { type PricingPDFParams, createPricingPDF } from '~/utils/fun';
+import { createPricingPDF, type PricingPDFParams } from '~/utils/fun';
 import { generateQoutaion } from './pdf.dto';
-// import { replacePage } from '~/utils/fun';
-
 
 
 

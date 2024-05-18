@@ -1,89 +1,85 @@
 <script setup lang="ts">
+// import { ref, reactive, onMounted, watch } from "vue";
+// import { generatePseudoUUID, generateCustomerID } from "@/utils"; // Assuming these utilities are available
+
 const rows = ref([
   {
     id: generatePseudoUUID(),
     itemid: "",
     qtty: 1,
-    disc: null,
+    price: null,
     amt: null,
   },
 ]);
 
-const addRow = (event: any) => {
+const addRow = () => {
   rows.value.push({
-    // Add default values for new item properties like quantity and amount
     id: generatePseudoUUID(),
+    itemid: "",
     qtty: 1,
+    price: null,
+    amt: null,
   });
 };
-const removeRow = (id: number) => {
-  console.log({ id });
+
+const removeRow = (id: string) => {
   if (rows.value.length > 1) {
     rows.value = rows.value.filter((it: any) => it.id !== id);
   }
 };
 
-const items = ref([
-  {
-    id: generatePseudoUUID(),
-    name: "Mobile App",
-    amount: 10000,
-  },
-  {
-    id: generatePseudoUUID(),
-    name: "Web App",
-    amount: 12345,
-  },
-  {
-    id: generatePseudoUUID(),
-    name: "Digital Marketting",
-    amount: 10050,
-  },
-]);
-const updateItemAmount = (id: string, qtt: number = 0, disc: number = 0) => {
-  const targetRowIndex = rows.value.findIndex((it: any) => it.itemid === id);
-  const targetItemIndex = items.value.findIndex((it: any) => it.id === id);
-  const targetitem = items.value[targetItemIndex];
-  let amt = 0;
-  if (qtt > 0) {
-    amt = qtt * targetitem.amount;
-  }
-  if (disc > 0) {
-    const discamt = (amt / 100) * disc;
-    amt = amt - discamt;
-  }
-  if (targetRowIndex !== -1) {
-    rows.value[targetRowIndex].amt = amt;
+const items = ref<{ id: string; name: string; amount: number }[]>([]);
+
+const fetchItems = async () => {
+  try {
+    const response: any = await $fetch("/api/qoutation-items");
+    if (!response) {
+      throw new Error("Network response was not ok");
+    }
+
+    items.value = response.map((it: any) => ({
+      id: it.id,
+      name: it.Item,
+      amount: it.Price,
+    }));
+  } catch (error) {
+    console.error("There was a problem with the fetch operation:", error);
   }
 };
 
-// Function to calculate subtotal
-const calculateSubtotal = () => {
-  return rows.value.reduce(
-    (total: number, row: any) => total + (row.amt || 0),
-    0
-  );
+onMounted(() => {
+  fetchItems();
+});
+
+const updateItemAmount = (id: string, qtty: number = 0, disc: number = 0) => {
+  const row = rows.value.find((it: any) => it.itemid === id);
+  const item = items.value.find((it: any) => it.id === id);
+  if (row && item) {
+    let amt = qtty > 0 ? qtty * item.amount : 0;
+    if (disc > 0) {
+      amt -= (amt * disc) / 100;
+    }
+    row.amt = amt;
+    row.price = item.amount;
+  }
 };
 
-// Function to calculate balance due (assuming no GST or other deductions)
+const calculateSubtotal = () =>
+  rows.value.reduce((total: number, row: any) => total + (row.amt || 0), 0);
+
 const calculateBalance = () => {
   const sub = calculateSubtotal();
-  const gst = (sub / 100) * 18;
+  const gst = (sub * 18) / 100;
   return sub + gst;
 };
 
-// Function to calculate GST
-const calculateGST = () => {
-  const sub = calculateSubtotal();
-  const gst = (sub / 100) * 18;
-  return gst.toFixed(2);
-};
+const calculateGST = () => ((calculateSubtotal() * 18) / 100).toFixed(2);
 
 const formData = reactive({
   date: undefined,
-  quote: "",
   customerId: "",
   validtill: undefined,
+  projectDescription: "",
   customer: {
     companyName: "",
     name: "",
@@ -94,7 +90,6 @@ const formData = reactive({
   items: [],
 });
 
-// Watch for changes in rows and update amounts accordingly
 watch(
   rows,
   () => {
@@ -108,57 +103,60 @@ watch(
     formData.items = rows.value.map((row: any) => ({
       id: row.itemid,
       name: items.value.find((item: any) => item.id === row.itemid)?.name || "",
+      qtt: row.qtty || 0,
       amount: row.amt || 0,
-    }));
+      price: row.price || 0,
+    })) as any;
   },
   { deep: true }
 );
 
 const printPdf = async () => {
-  console.log({
-    formData,
-    subTotal: calculateSubtotal(),
+  const dataform = {
+    date: formData.date,
+    customerId: formData.customerId,
+    validTill: formData.validtill,
+    customer: formData.customer.companyName,
+    projectDescription: formData.projectDescription,
+    tableData: formData.items.map((it: any) => [
+      it.name,
+      String(it.qtt),
+      String(it.price),
+      String(it.amount),
+    ]),
+    subtotal: calculateSubtotal().toFixed(2),
     gst: calculateGST(),
-    balance: calculateBalance(),
-  });
+    total: calculateBalance().toFixed(2),
+  };
 
-  // Send the request and expect a Blob response
   const response: any = await $fetch("/api/pdf/generate-pdf", {
-    method: "post",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ test: 123 }),
+    body: dataform,
   });
 
-  console.log({ response });
-
-  // Create a URL for the Blob
   const url = URL.createObjectURL(response);
-
-  // Create a temporary anchor element to trigger the download
   const link = document.createElement("a");
   link.href = url;
-  link.download = "quotation.pdf"; // Set the desired file name
+  link.download = "quotation.pdf";
   document.body.appendChild(link);
-
-  // Trigger the download by simulating a click
   link.click();
-
-  // Clean up: remove the link element and revoke the URL
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
 </script>
+
 <template>
   <div class="h-screen w-screen grid place-items-center p-6 overflow-auto">
     <main
-      class="p-3 border border-gray-300 h-fit w-[100%] min-w-[600px] max-w-[600px]"
+      class="p-3 border border-gray-300 h-fit w-[100%] min-w-[600px] max-w-[600px] relative"
     >
       <!-- Header section start-->
       <nav class="flex justify-between items-center mb-16">
         <div>
-          <img src="/ashlogo336x52.svg" alt="" width="200" />
+          <img src="/ashlogo336x52.svg" alt="ASHCORP Logo" width="200" />
         </div>
         <div class="text-3xl font-bold text-[#72184F]">Quotation</div>
       </nav>
@@ -196,16 +194,6 @@ const printPdf = async () => {
               </td>
             </tr>
             <tr>
-              <td class="w-[110px]">Quote#:</td>
-              <td class="border border-gray-400">
-                <input
-                  type="text"
-                  class="border w-[100%] outline-none"
-                  v-model="formData.quote"
-                />
-              </td>
-            </tr>
-            <tr>
               <td class="w-[110px]">Customer ID:</td>
               <td class="border border-gray-400">
                 <input
@@ -213,6 +201,12 @@ const printPdf = async () => {
                   class="border w-[100%] outline-none"
                   v-model="formData.customerId"
                 />
+                <button
+                  class="bg-orange-500 w-full"
+                  @click="() => (formData.customerId = generateCustomerID())"
+                >
+                  generate
+                </button>
               </td>
             </tr>
             <tr>
@@ -244,7 +238,7 @@ const printPdf = async () => {
             </tr>
             <tr>
               <td class="w-[110px]">Company Name:</td>
-              <td class="">
+              <td>
                 <input
                   type="text"
                   class="border w-[100%] outline-none"
@@ -254,7 +248,7 @@ const printPdf = async () => {
             </tr>
             <tr>
               <td class="w-[110px]">Name:</td>
-              <td class="">
+              <td>
                 <input
                   type="text"
                   class="border w-[100%] outline-none"
@@ -264,7 +258,7 @@ const printPdf = async () => {
             </tr>
             <tr>
               <td class="w-[110px]">Address:</td>
-              <td class="">
+              <td>
                 <input
                   type="text"
                   class="border w-[100%] outline-none"
@@ -274,7 +268,7 @@ const printPdf = async () => {
             </tr>
             <tr>
               <td class="w-[110px]">Email:</td>
-              <td class="">
+              <td>
                 <input
                   type="email"
                   class="border w-[100%] outline-none"
@@ -284,7 +278,7 @@ const printPdf = async () => {
             </tr>
             <tr>
               <td class="w-[110px]">Phone:</td>
-              <td class="">
+              <td>
                 <input
                   type="tel"
                   class="border w-[100%] outline-none"
@@ -297,10 +291,23 @@ const printPdf = async () => {
       </section>
       <!-- Customer Section end-->
 
+      <!-- Project description -->
+      <div>
+        <span class="text-left text-white px-2 bg-[#83246D] font-normal"
+          >Project Description</span
+        >
+        <textarea
+          class="w-full h-full border border-gray-400 outline-0"
+          placeholder="Enter project description"
+          required
+          v-model="formData.projectDescription"
+        ></textarea>
+      </div>
+      <!-- Project description end  -->
+
       <!-- Items Section start-->
       <section class="mb-10 text-sm">
         <div>
-          <!-- {{ rows }} -->
           <table class="w-full itemtable">
             <thead class="text-white">
               <tr>
@@ -309,38 +316,33 @@ const printPdf = async () => {
                   Quantity
                 </th>
                 <th class="border itemth bg-[#83246D] font-normal w-[130px]">
-                  Discount
+                  Price
                 </th>
                 <th class="border itemth bg-[#83246D] font-normal w-[180px]">
-                  Amount
+                  Total
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="(row, index) in rows"
-                :key="index"
+                v-for="row in rows"
+                :key="row.id"
                 class="bg-gray-200 relative"
-                v-on:dblclick="() => removeRow(row.id)"
+                @dblclick="() => removeRow(row.id)"
               >
                 <td class="itemtd">
-                  <select
-                    name=""
-                    id=""
-                    v-model="row.itemid"
-                    class="outline-none"
-                  >
+                  <select v-model="row.itemid" class="outline-none w-full">
                     <option value="">Select item</option>
                     <option
-                      v-for="(item, index) in items"
-                      :key="index"
+                      v-for="item in items"
+                      :key="item.id"
                       :value="item.id"
+                      class=""
                     >
                       {{ item.name }}
                     </option>
                   </select>
                 </td>
-
                 <td class="itemtd">
                   <input
                     v-model="row.qtty"
@@ -351,25 +353,13 @@ const printPdf = async () => {
                 </td>
                 <td class="itemtd">
                   <input
-                    v-model="row.disc"
-                    @change="
-                      () => updateItemAmount(row.itemid, row.qtty, row.disc)
-                    "
+                    v-model="row.price"
                     type="number"
                     class="border w-[100%] outline-none bg-transparent"
                   />
                 </td>
-
-                <td class="itemtd">
-                  <!-- <input
-                    :value="row.amt"
-                    type="text"
-                    class="border w-[100%] outline-none bg-transparent"
-                  /> -->
-                  {{ row.amt }}
-                </td>
+                <td class="itemtd">{{ row.amt }}</td>
               </tr>
-
               <tr>
                 <td colspan="4">
                   <button class="border p-2 bg-blue-300 w-full" @click="addRow">
@@ -380,7 +370,6 @@ const printPdf = async () => {
             </tbody>
           </table>
         </div>
-
         <div class="flex justify-end">
           <table class="w-[310px] itemtable">
             <tr>
@@ -395,7 +384,6 @@ const printPdf = async () => {
                 {{ calculateGST() }}
               </td>
             </tr>
-
             <tr>
               <td class="itemtd w-[129px] font-bold">Balance:</td>
               <td class="itemtd border border-gray-400">
@@ -405,7 +393,6 @@ const printPdf = async () => {
           </table>
         </div>
       </section>
-
       <!-- Items Section end-->
 
       <section
@@ -413,8 +400,13 @@ const printPdf = async () => {
       >
         Thank You For Your Business!
       </section>
+      <button
+        class="border-2 p-2 absolute -top-1 -right-[60px] font-bold"
+        @click="printPdf"
+      >
+        Print
+      </button>
     </main>
-    <button class="bg-red-300 border-2 p-4" @click="printPdf">Print</button>
   </div>
 </template>
 
