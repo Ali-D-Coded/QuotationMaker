@@ -57,7 +57,8 @@ export default defineEventHandler(async (event) => {
     // Send the PDF bytes as the response
     return send(event, pdfBytes);
   } catch (error: any) {
-    const statusMessage = typeof error.message === 'string' ? error.message : 'Internal Server Error';
-    throw createError({ statusCode: 500, statusMessage });
+    // const statusMessage = typeof error.message === 'string' ? error.message : 'Internal Server Error';
+    // throw createError({ statusCode: 500, statusMessage });
+    return error
   }
 });
