@@ -30,7 +30,7 @@ export async function replacePage(data: PricingPDFParams) {
     return pdfBytes;
   } catch (error) {
     console.error('Error in replacePage function:', error);
-    throw new Error('Failed to replace page in PDF');
+    throw new Error(`Failed to replace page in PDF ${error}`);
   }
 }
 
