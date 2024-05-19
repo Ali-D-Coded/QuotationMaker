@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import path from "path"
 import { PDFDocument, PageSizes, StandardFonts, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit'
 
@@ -62,10 +63,10 @@ export async function createPricingPDF({
 
 	pdfDoc.registerFontkit(fontkit);
 
-	const nexBoldBytes = fs.readFileSync("./assets/fonts/Nexa-bold.otf");
-	const nexLightBytes = fs.readFileSync("./assets/fonts/Nexa-light.otf");
-	const telegrafRegBytes = fs.readFileSync("./assets/fonts/Telegraf-Regular.otf");
-	const telegrafUltraBoldBytes = fs.readFileSync("./assets/fonts/Telegraf-Ultrabold.otf");
+	const nexBoldBytes = fs.readFileSync(path.resolve("./assets/fonts/Nexa-bold.otf"));
+	const nexLightBytes = fs.readFileSync(path.resolve("./assets/fonts/Nexa-light.otf"));
+	const telegrafRegBytes = fs.readFileSync(path.resolve("./assets/fonts/Telegraf-Regular.otf"));
+	const telegrafUltraBoldBytes = fs.readFileSync(path.resolve("./assets/fonts/Telegraf-Ultrabold.otf"));
 
 	const nexaBoldFont = await pdfDoc.embedFont(nexBoldBytes);
 	const nexaLightFont = await pdfDoc.embedFont(nexLightBytes);
