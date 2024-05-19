@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     // Send the PDF bytes as the response
     return send(event, pdfBytes);
   } catch (error: any) {
-    console.error('Error in API handler:', error);
-    throw createError({ statusCode: 500, statusMessage: error.message || 'Internal Server Error' });
+    const statusMessage = typeof error.message === 'string' ? error.message : 'Internal Server Error';
+    throw createError({ statusCode: 500, statusMessage });
   }
 });
