@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { createPricingPDF, type PricingPDFParams } from '~/utils/fun';
 import { generateQoutaion } from './pdf.dto';
@@ -7,7 +8,8 @@ import { generateQoutaion } from './pdf.dto';
 export async function replacePage(data: PricingPDFParams) {
   try {
     // Load the original PDF
-    const originalPdfBytes = fs.readFileSync('./pdf/quotationmain.pdf');
+    const filePath = path.resolve('./pdf/quotationmain.pdf');
+    const originalPdfBytes = fs.readFileSync(filePath);
     const originalPdfDoc = await PDFDocument.load(originalPdfBytes);
 
     // Create the new PDF
