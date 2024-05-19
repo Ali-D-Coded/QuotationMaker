@@ -2,8 +2,22 @@ import { google } from "googleapis";
 import { DataArray, convertToObjects } from "~/utils/fun";
 
 export default defineEventHandler(async (event) => {
+	const base64Config = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+	let keyFile = null
+	if (base64Config) {
+		try {
+			const decodedConfig = Buffer.from(base64Config, 'base64').toString('utf-8');
+			keyFile = JSON.parse(decodedConfig);
+		} catch (error) {
+			console.error("Failed to decode or parse configuration:", error);
+		}
+	} else {
+		console.error("Configuration environment variable is missing");
+	}
+
 	const auth = new google.auth.GoogleAuth({
-		keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+		// keyFile: keyFile,
+		credentials: keyFile,
 		scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
 	});
 
