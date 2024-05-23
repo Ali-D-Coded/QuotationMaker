@@ -64,16 +64,21 @@ const updateItemAmount = (id: string, qtty: number = 0, disc: number = 0) => {
   }
 };
 
+const includeGST = ref<Boolean>(false);
+
+const toggleGST = (event: Event) => (includeGST.value = event?.target?.checked);
+
 const calculateSubtotal = () =>
   rows.value.reduce((total: number, row: any) => total + (row.amt || 0), 0);
 
 const calculateBalance = () => {
   const sub = calculateSubtotal();
-  const gst = (sub * 18) / 100;
+  const gst = includeGST.value ? (sub * 18) / 100 : 0;
   return sub + gst;
 };
 
-const calculateGST = () => ((calculateSubtotal() * 18) / 100).toFixed(2);
+const calculateGST = () =>
+  includeGST ? ((calculateSubtotal() * 18) / 100).toFixed(2) : 0;
 
 const formData = reactive({
   date: undefined,
@@ -125,7 +130,7 @@ const printPdf = async () => {
       String(it.amount),
     ]),
     subtotal: calculateSubtotal().toFixed(2),
-    gst: calculateGST(),
+    gst: includeGST.value ? calculateGST() : "0",
     total: calculateBalance().toFixed(2),
   };
 
@@ -382,6 +387,9 @@ const printPdf = async () => {
               <td class="itemtd w-[129px] font-bold">GST:</td>
               <td class="itemtd border border-gray-400">
                 {{ calculateGST() }}
+              </td>
+              <td class="itemtd border border-gray-400">
+                <input type="checkbox" @change="toggleGST($event)" />
               </td>
             </tr>
             <tr>

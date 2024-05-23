@@ -48,6 +48,31 @@ export interface PricingPDFParams {
 	total: string;
 }
 
+// Function to split text into lines based on the available width
+function splitTextIntoLines(text: string, maxWidth: any, font: any, fontSize: any) {
+	const lines = [];
+	let line = '';
+	const words = text.split(' ');
+
+	words.forEach(word => {
+		const testLine = line + word + ' ';
+		const testLineWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+		if (testLineWidth > maxWidth && line !== '') {
+			lines.push(line.trim());
+			line = word + ' ';
+		} else {
+			line = testLine;
+		}
+	});
+
+	if (line.trim() !== '') {
+		lines.push(line.trim());
+	}
+
+	return lines;
+}
+
 export async function createPricingPDF({
 	date,
 	validTill, customerId,
@@ -170,17 +195,26 @@ export async function createPricingPDF({
 		font: telegrafUltraBoldFont,
 		color: maroon,
 	});
-	page.drawText(projectDescription, {
-		x: 380,
-		y: height - 230,
-		size: 12,
-		font: telegrafRegFont,
-		color: darkBlue,
+
+	const projectDescriptionLines = splitTextIntoLines(projectDescription, 180, telegrafRegFont, 12);
+	const projectDescriptionHeight = projectDescriptionLines.length * 12;
+	projectDescriptionLines.forEach((line, index) => {
+		page.drawText(line, {
+			x: 380,
+			y: height - 230 - index * 12, // Adjust Y position for each line
+			size: 12,
+			font: telegrafRegFont,
+			color: darkBlue,
+		});
 	});
 
+	// Calculate the Y position for the line under the project description and the table
+	const lineAndTableY = height - 250 - Math.max(projectDescriptionHeight, 40 * tableData.length);
+
+	// Draw the line under the project description
 	page.drawLine({
-		start: { x: 50, y: height - 250 },
-		end: { x: width - 50, y: height - 250 },
+		start: { x: 50, y: lineAndTableY },
+		end: { x: width - 50, y: lineAndTableY },
 		thickness: 2,
 		color: rgb(0.75, 0.2, 0.2),
 		opacity: 0.75,
@@ -188,10 +222,11 @@ export async function createPricingPDF({
 
 	// Define table headers
 	const headers = ['DESCRIPTION', 'QUANTITY', 'PRICE', 'TOTAL'];
-	const headerY = height - 280;
+	const headerY = lineAndTableY - 30;
 	const headerXPositions = [50, 290, 390, 490];
 	const cellWidths = [240, 100, 100, 100];
 
+	// Draw table headers
 	headers.forEach((text, i) => {
 		page.drawText(text, {
 			x: headerXPositions[i],
@@ -201,31 +236,6 @@ export async function createPricingPDF({
 			color: darkBlue,
 		});
 	});
-
-	// Function to split text into lines based on the available width
-	function splitTextIntoLines(text: string, maxWidth: any, font: any, fontSize: any) {
-		const lines = [];
-		let line = '';
-		const words = text.split(' ');
-
-		words.forEach(word => {
-			const testLine = line + word + ' ';
-			const testLineWidth = font.widthOfTextAtSize(testLine, fontSize);
-
-			if (testLineWidth > maxWidth && line !== '') {
-				lines.push(line.trim());
-				line = word + ' ';
-			} else {
-				line = testLine;
-			}
-		});
-
-		if (line.trim() !== '') {
-			lines.push(line.trim());
-		}
-
-		return lines;
-	}
 
 	// Draw table data
 	let tableY = headerY - 30;
@@ -255,8 +265,6 @@ export async function createPricingPDF({
 
 		tableY -= maxRowHeight;
 	});
-
-
 	page.drawLine({
 		start: { x: 50, y: tableY - 5 },
 		end: { x: width - 50, y: tableY - 5 },
@@ -281,21 +289,24 @@ export async function createPricingPDF({
 		color: darkBlue,
 	});
 
-	// Add gst 
-	page.drawText('GST:', {
-		x: 370,
-		y: tableY - 70,
-		size: 12,
-		font: telegrafUltraBoldFont,
-		color: darkBlue,
-	});
-	page.drawText(gst.toString(), {
-		x: 470,
-		y: tableY - 70,
-		size: 12,
-		font: telegrafRegFont,
-		color: darkBlue,
-	});
+	if (gst > 0) {
+
+		// Add gst 
+		page.drawText('GST:', {
+			x: 370,
+			y: tableY - 70,
+			size: 12,
+			font: telegrafUltraBoldFont,
+			color: darkBlue,
+		});
+		page.drawText(gst.toString(), {
+			x: 470,
+			y: tableY - 70,
+			size: 12,
+			font: telegrafRegFont,
+			color: darkBlue,
+		});
+	}
 	page.drawText('TOTAL:', {
 		x: 370,
 		y: tableY - 90,
