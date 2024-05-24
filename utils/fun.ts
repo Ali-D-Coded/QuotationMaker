@@ -209,7 +209,7 @@ export async function createPricingPDF({
 	});
 
 	// Calculate the Y position for the line under the project description and the table
-	const lineAndTableY = height - 250 - Math.max(projectDescriptionHeight, 40 * tableData.length);
+	const lineAndTableY = height - 250 - Math.max(projectDescriptionHeight);
 
 	// Draw the line under the project description
 	page.drawLine({
