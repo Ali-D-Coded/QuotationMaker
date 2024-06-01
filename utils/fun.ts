@@ -189,19 +189,19 @@ export async function createPricingPDF({
 		color: darkBlue,
 	});
 	page.drawText('PROJECT DESCRIPTION:', {
-		x: 380,
-		y: height - 210,
+		x: 50,
+		y: height - 260,
 		size: 12,
 		font: telegrafUltraBoldFont,
 		color: maroon,
 	});
 
-	const projectDescriptionLines = splitTextIntoLines(projectDescription, 180, telegrafRegFont, 12);
-	const projectDescriptionHeight = projectDescriptionLines.length * 12;
+	const projectDescriptionLines = splitTextIntoLines(projectDescription, 480, telegrafRegFont, 12);
+	const projectDescriptionHeight = projectDescriptionLines.length * 65;
 	projectDescriptionLines.forEach((line, index) => {
 		page.drawText(line, {
-			x: 380,
-			y: height - 230 - index * 12, // Adjust Y position for each line
+			x: 50,
+			y: height - 280 - index * 13, // Adjust Y position for each line
 			size: 12,
 			font: telegrafRegFont,
 			color: darkBlue,
@@ -209,7 +209,7 @@ export async function createPricingPDF({
 	});
 
 	// Calculate the Y position for the line under the project description and the table
-	const lineAndTableY = height - 250 - Math.max(projectDescriptionHeight);
+	const lineAndTableY = height - 240 - Math.max(projectDescriptionHeight - 20);
 
 	// Draw the line under the project description
 	page.drawLine({
@@ -222,7 +222,7 @@ export async function createPricingPDF({
 
 	// Define table headers
 	const headers = ['DESCRIPTION', 'QUANTITY', 'PRICE', 'TOTAL'];
-	const headerY = lineAndTableY - 30;
+	const headerY = lineAndTableY - 20;
 	const headerXPositions = [50, 290, 390, 490];
 	const cellWidths = [240, 100, 100, 100];
 
